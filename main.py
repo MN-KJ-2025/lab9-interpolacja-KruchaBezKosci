@@ -18,8 +18,13 @@ def chebyshev_nodes(n: int = 10) -> np.ndarray | None:
         (np.ndarray): Wektor węzłów Czebyszewa (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
-
+    if not isinstance(n,int):
+        return None
+    if n<= 0:
+        return None
+    angles = np.linspace(0, np.pi, n)
+    nodes = np.cos(angles)
+    return nodes
 
 def bar_cheb_weights(n: int = 10) -> np.ndarray | None:
     """Funkcja tworząca wektor wag dla węzłów Czebyszewa wymiaru (n,).
@@ -31,7 +36,15 @@ def bar_cheb_weights(n: int = 10) -> np.ndarray | None:
         (np.ndarray): Wektor wag dla węzłów Czebyszewa (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    w = np.zeros(n)
+    for k in range(n):
+        w[k] = (-1)**k
+        
+    w[0] = 0.5
+    w[-1] = 0.5 * (-1)**(n-1)  
+    return w
+
+print(bar_cheb_weights(10))
 
 
 def barycentric_inte(
@@ -52,7 +65,33 @@ def barycentric_inte(
         (np.ndarray): Wektor wartości funkcji interpolującej (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if any(not isinstance(arr, np.ndarray) for arr in [xi, yi, wi, x]):
+        return None
+
+    if xi.shape != yi.shape or xi.shape != wi.shape:
+        return None
+
+    if xi.ndim != 1 or yi.ndim != 1 or wi.ndim != 1 or x.ndim != 1:
+        return None
+
+
+    x_reshaped = x[:, np.newaxis]
+    xi_reshaped = xi[np.newaxis, :]
+    
+
+    diff = x_reshaped - xi_reshaped  # Macierz (n, m)
+    singular_mask = np.isclose(diff, 0, atol=1e-15)
+
+    diff[singular_mask] = 1.0
+    kernels = wi / diff
+    numerator = np.sum(kernels * yi, axis=1)
+    denominator = np.sum(kernels, axis=1)
+    
+    results = numerator / denominator
+    row_indices, col_indices = np.where(singular_mask)
+    results[row_indices] = yi[col_indices]
+
+    return results
 
 
 def L_inf(
@@ -71,4 +110,9 @@ def L_inf(
         (float): Wartość normy L-nieskończoność.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if not isinstance(xr,(int,float,list,np.ndarray)) or not isinstance(x,(int,float,list,np.ndarray)):
+        return None
+    
+    xr = np.array(xr)
+    x = np.array(x)
+    return np.max(np.abs(xr-x))
